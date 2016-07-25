@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Basic chart app</title>
+    <meta charset="UTF-8" content="utf-8" http-equiv="encoding">
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="js/sunburstApp.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            background-color: #fff;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body ng-app="sunburstApp">
+    <h1 align="center">Total size percentage by paths</h1>
+    <div sunburst-directive="data/MemoryJson.json,data/MemoryJson2.json"></div>
+</body>
+</html>
