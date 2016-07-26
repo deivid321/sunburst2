@@ -15,17 +15,21 @@ angular
 
         p1.then(function (response) {
             $scope.status1 = response.statusText;
-            $scope.paths1 = angular.fromJson(response.data.histograms[0].path);
-            $scope.totals1 = angular.fromJson(response.data.histograms[0].total);
-            $scope.paths1C = $scope.paths1.slice();
-            $scope.totals1C = $scope.totals1.slice();
+            var paths1 = angular.fromJson(response.data.histograms[0].path);
+            var totals1 = angular.fromJson(response.data.histograms[0].total);
 
             p2.then(function (response2) {
                 $scope.status2 = response2.statusText;
-                $scope.paths2 = angular.fromJson(response2.data.histograms[0].path);
-                $scope.totals2 = angular.fromJson(response2.data.histograms[0].total);
+                var paths2 = angular.fromJson(response2.data.histograms[0].path);
+                var totals2 = angular.fromJson(response2.data.histograms[0].total);
                 $scope.status = "Calculating data";
-                calc();
+
+                $scope.paths1N = [];
+                $scope.totals1N = [];
+                $scope.paths2N = [];
+                $scope.totals2N = [];
+                compare(paths1, totals1, paths2, totals2);
+
                 $scope.csv1 = [];
                 angular.forEach($scope.paths1N, function (item, i) {
                     if ($scope.totals1N[i] > 0) {
@@ -35,7 +39,6 @@ angular
                     i++;
                 });
 
-               // calc2();
                 $scope.csv2 = [];
                 angular.forEach($scope.paths2N, function (item, i) {
                     if ($scope.totals2N[i] > 0) {
@@ -51,52 +54,39 @@ angular
         });
 
         // A - B
-        function calc() {
+        function compare(paths1, totals1, paths2, totals2) {
             $scope.n = 0;
-            $scope.paths1N = [];
-            $scope.totals1N = [];
-            $scope.paths2N = [];
-            $scope.totals2N = [];
-            $scope.paths1C.forEach(doStuff);
+            paths1.forEach(function (item, indexA) {
+                var indexB = paths2.indexOf(item);
+                if (indexB >= 0) {
+                    var a = totals1[indexA];
+                    var b = totals2[indexB];
+                    var diff = a - b;
+                    if (diff == 0) {
+                        $scope.n++;
+                    }
+                    if (diff > 0) {
+                        $scope.totals1N.push(diff);
+                        $scope.paths1N.push(item);
+                    }
+                    if (diff < 0) {
+                        $scope.totals2N.push(Math.abs(diff));
+                        $scope.paths2N.push(item);
+                    }
+                }
+            });
         }
 
-        //B - A
-        function calc2() {
-            $scope.paths2.forEach(doStuff);
+        function toCsv(paths, totals){
+            angular.forEach(paths, function (item, i) {
+                if ($scope.totals1N[i] > 0) {
+                    var arr = [item.replace(/\//g, ':') + ", ", $scope.totals1N[i]];
+                    $scope.csv1.push(arr);
+                }
+                i++;
+            });
         }
 
-        function doStuff(item, i, arr) {
-            var indexB = $scope.paths2.indexOf(item);
-            if (indexB < 0) {
-                // $scope.paths2.push(item);
-                // $scope.totals2.push(0);
-            } else {
-                var a= $scope.totals1C[i];
-                var b= $scope.totals2[indexB];
-                var diff = a - b;
-                if (diff == 0) {
-                    $scope.n++;
-                }
-                if (diff > 0) {
-                    $scope.totals1N.push(diff);
-                    $scope.paths1N.push(item);
-                }
-                if (diff < 0) {
-                    $scope.totals2N.push(Math.abs(diff));
-                    $scope.paths2N.push(item);
-                }
-            }
-        }
-
-        function doStuff2(item, i, arr) {
-            var indexA = $scope.paths1.indexOf(item);
-            if (indexA < 0) {
-                // $scope.paths.push(item);
-                // $scope.totals.push(0);
-            } else {
-                $scope.totals2[i] -= $scope.totals1C[indexA];
-            }
-        }
     })
     .directive('sunburstDirective', sunburst);
 
@@ -109,7 +99,7 @@ function sunburst($http) {
 
 function link($scope, element, attrs) {
     showSunburst($scope.csv1, "1", 1);
-    //showSunburst($scope.csv2, "2", 2);
+    showSunburst($scope.csv2, "2", 2);
 }
 function showSunburst(csv, id, part) {
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
@@ -139,14 +129,14 @@ function showSunburst(csv, id, part) {
     // Total size of all segments; we set this later, after loading the data.
     var totalSize = 0;
 
-    var vis = d3.select("#chart"+id).append("svg:svg")
+    var vis = d3.select("#chart" + id).append("svg:svg")
         .attr("class", "chart")
         .attr("width", width)
         .attr("x", 0)
         .attr("height", height)
         .append("svg:g")
-        .attr("id", "container"+id)
-        .attr("transform", "translate(" + window.innerWidth / 2 / 2 + "," + window.innerHeight / 2 / 2.5 + ")");
+        .attr("id", "container" + id)
+        .attr("transform", "translate(" + window.innerWidth / 2 / 2 + "," + window.innerHeight / 2 / 2 + ")");
 
     var partition = d3.layout.partition()
         .size([2 * Math.PI, radius * radius])
@@ -201,7 +191,7 @@ function showSunburst(csv, id, part) {
         var path = vis.data([json]).selectAll("path")
             .data(nodes)
             .enter().append("svg:path")
-            .attr("id", "path"+id)
+            .attr("id", "path" + id)
             .attr("class", ".chart path")
             .attr("display", function (d) {
                 return d.depth ? null : "none";
@@ -215,7 +205,7 @@ function showSunburst(csv, id, part) {
             .on("mouseover", mouseover);
 
         // Add the mouseleave handler to the bounding circle.
-        d3.select("#container"+id).on("mouseleave", mouseleave);
+        d3.select("#container" + id).on("mouseleave", mouseleave);
 
         // Get total size of the tree = value of root node from partition.
         totalSize = path.node().__data__.value;
@@ -230,16 +220,15 @@ function showSunburst(csv, id, part) {
             percentageString = "< 0.05%";
         }
 
-        d3.select("#percentage"+id)
+        d3.select("#percentage" + id)
             .text(percentageString);
 
-        d3.select("#explanation"+id)
+        d3.select("#explanation" + id)
             .style("left", ((window.innerWidth - 140) / 2).toString() + "px")
             .style("top", ((window.innerHeight - 80) / 2).toString() + "px")
             .style("visibility", "");
 
         var sequenceArray = getAncestors(d);
-        var sequenceArray2 = getAncestors2(d);
         updateBreadcrumbs(sequenceArray, percentageString);
 
         // Fade all the segments.
@@ -247,17 +236,11 @@ function showSunburst(csv, id, part) {
             .style("opacity", 0.3);
 
         // Then highlight only those that are an ancestor of the current segment.
-        vis.selectAll("#path"+id)
+        d3.selectAll(".chart path")
             .filter(function (node) {
                 return (sequenceArray.indexOf(node) >= 0);
             })
             .style("opacity", 1);
-
-        d3j.selectAll("#path"+id)
-            .filter(function (node) {
-                return (sequenceArray2.indexOf(node) >= 0);
-            })
-            .style("opacity", 1)
 
     }
 
@@ -280,7 +263,7 @@ function showSunburst(csv, id, part) {
                 d3.select(this).on("mouseover", mouseover);
             });
 
-        d3.select("#explanation"+id)
+        d3.select("#explanation" + id)
             .style("visibility", "hidden");
     }
 
@@ -289,21 +272,6 @@ function showSunburst(csv, id, part) {
     function getAncestors(node) {
         var path = [];
         var current = node;
-        while (current.parent) {
-            path.unshift(current);
-            current = current.parent;
-        }
-        return path;
-    }
-
-    function getAncestors2(node) {
-        var all = d3.selectAll("#path2");
-        var list = all[0];
-        var object = list.filter(function ( obj ) {
-            return obj.__data__.name === node.name;
-        })[0].__data__;
-        var path = [];
-        var current = object;
         while (current.parent) {
             path.unshift(current);
             current = current.parent;
@@ -389,7 +357,7 @@ function showSunburst(csv, id, part) {
 
     function drawLegend() {
 
-        var legend = d3.select("#legend"+id).append("svg:svg")
+        var legend = d3.select("#legend" + id).append("svg:svg")
             .attr("width", li.w)
             .attr("height", d3.keys(colors).length * (li.h + li.s));
 
@@ -420,7 +388,7 @@ function showSunburst(csv, id, part) {
     }
 
     function toggleLegend() {
-        var legend = d3.select("#legend"+id);
+        var legend = d3.select("#legend" + id);
         if (legend.style("visibility") == "hidden") {
             legend.style("visibility", "");
         } else {
