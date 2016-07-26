@@ -154,7 +154,7 @@ function showSunburst(csv, id) {
     function createVisualization(json) {
 
         // Basic setup of page elements.
-        if (id==1) initializeBreadcrumbTrail();
+        if (id == 1) initializeBreadcrumbTrail();
         drawLegend();
         d3.select("#togglelegend").on("click", toggleLegend);
 
@@ -173,7 +173,7 @@ function showSunburst(csv, id) {
         var path = vis.data([json]).selectAll("path")
             .data(nodes)
             .enter().append("svg:path")
-            .attr("id", "path"+id)
+            .attr("id", "path" + id)
             .attr("class", ".chart path")
             .attr("display", function (d) {
                 return d.depth ? null : "none";
@@ -210,26 +210,20 @@ function showSunburst(csv, id) {
             .style("top", ((window.innerHeight - 80) / 2).toString() + "px")
             .style("visibility", "");
 
-        var sequenceArray = getAncestors(d);
-        var sequenceArray2 = getAncestors2(d);
-        updateBreadcrumbs(sequenceArray, percentageString);
+        var basicPath = [];
+        var sequenceArray = getAncestors(d, basicPath);
+        updateBreadcrumbs(basicPath, percentageString); //TODO need to send only one sequence when there are two
 
         // Fade all the segments.
         d3.selectAll(".chart path")
             .style("opacity", 0.3);
 
         // Then highlight only those that are an ancestor of the current segment.
-        d3.selectAll("#path1")
+        d3.selectAll(".chart path")
             .filter(function (node) {
                 return (sequenceArray.indexOf(node) >= 0);
             })
             .style("opacity", 1);
-        d3.selectAll("#path2")
-            .filter(function (node) {
-                return (sequenceArray2.indexOf(node) >= 0);
-            })
-            .style("opacity", 1);
-
     }
 
     // Restore everything to full opacity when moving off the visualization.
@@ -255,33 +249,33 @@ function showSunburst(csv, id) {
             .style("visibility", "hidden");
     }
 
-    // Given a node in a partition layout, return an array of all of its ancestor
-    // nodes, highest first, but excluding the root.
-    function getAncestors(node) {
-        var path = [];
-        var current = node;
-        while (current.parent) {
-            path.unshift(current);
-            current = current.parent;
-        }
-        return path;
-    }
-
-    function getAncestors2(node) {
-        var all = d3.selectAll("#path2");
-        var list = all[0];
-        var object = null;
-        var ls = list.filter(function ( obj ) {
-            return (obj.__data__.name === node.name && obj.__data__.parent.name == node.parent.name);
+    function getAncestors(node, basicPath) {
+        var all = d3.selectAll(".chart path")[0];
+        var ls = all.filter(function (obj) {
+            var curr1 = obj.__data__;
+            var nd = node;
+            while (nd.name != "root") {
+                if (curr1.name != nd.name) return false;
+                curr1 = curr1.parent;
+                nd = nd.parent;
+            }
+            return true;
         });
-        if (ls.length==0) return;
-        object = ls[0].__data__;
         var path = [];
-        var current = object;
-        while (current.parent) {
-            path.unshift(current);
-            current = current.parent;
-        }
+        if (ls.length == 0) return null;
+        var firstTime = 1;
+        ls.forEach(function (el) {
+            var current = el.__data__;
+            while (current.parent) {
+                path.unshift(current);
+                if (firstTime && current.name != "root")
+                    basicPath.unshift(current);
+                current = current.parent;
+            }
+            firstTime = 0;
+
+        })
+
         return path;
     }
 
