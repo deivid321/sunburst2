@@ -19,8 +19,9 @@
     </style>
 </head>
 
-<body ng-app="sunburstApp">
+<body ng-app="sunburstApp" ng-controller="sunburstController">
+    {{status}}
     <h1 align="center">Total size percentage by paths</h1>
-    <div sunburst-directive="data/MemoryJson.json,data/MemoryJson2.json"></div>
+    <div sunburst-directive ng-if="dataIsLoaded"></div>
 </body>
 </html>

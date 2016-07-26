@@ -1,26 +1,36 @@
+<!--<div id="sidebar1" class="sidebar">
+    <input type="checkbox" id="togglelegend"> Legend
+    <br/>
+    <div id="legend1" class="legend" style="visibility: hidden;"></div>
+</div> -->
 <div id="main">
     <div id="sequence"></div>
-    <div id="chart">
-        <div id="explanation" style="visibility: hidden;">
-            <span id="percentage"></span>
+    <div id="chart1" class="chart">
+        <h1>Comparance of A - B</h1>
+      <!--  <div id="explanation1" class="explanation" style="visibility: hidden;">
+            <span id="percentage1" class="percentage"></span>
             <br/> is the percentage of total size in all directories
-        </div>
+        </div> -->
+    </div>
+    <div id="chart2" class="chart">
+        <h1>Comparance of B - A</h1>
+       <!-- <div id="explanation2" class="explanation" style="visibility: hidden;">
+            <span id="percentage2" class="percentage"></span>
+            <br/> is the percentage of total size in all directories
+        </div> -->
     </div>
     <br>
 </div>
+<!--
 <div id="sidebar">
     <input type="checkbox" id="togglelegend"> Legend
     <br/>
     <div id="legend" style="visibility: hidden;"></div>
-</div>
+</div> -->
 
 <style>
     #main {
-        float: left;
-    }
-
-    #sidebar {
-        float: left;
+       float: left;
     }
 
     #sequence {
@@ -28,7 +38,11 @@
         height: 70px;
     }
 
-    #legend {
+    .sidebar {
+        float: left;
+    }
+
+    .legend {
         padding: 10px 0 0 3px;
     }
 
@@ -37,15 +51,16 @@
         fill: #fff;
     }
 
-    #chart {
+    .chart {
+        float: left;
         position: relative;
     }
 
-    #chart path {
+    .chart path {
         stroke: #fff;
     }
 
-    #explanation {
+    .explanation {
         position: relative;
         width: 140px;
         text-align: center;
@@ -53,7 +68,7 @@
         z-index: -1;
     }
 
-    #percentage {
+    .percentage {
         font-size: 2.5em;
     }
 </style>
