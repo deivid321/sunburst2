@@ -24,29 +24,16 @@ angular
                 var totals2 = angular.fromJson(response2.data.histograms[0].total);
                 $scope.status = "Calculating data";
 
-                $scope.paths1N = [];
-                $scope.totals1N = [];
-                $scope.paths2N = [];
-                $scope.totals2N = [];
-                compare(paths1, totals1, paths2, totals2);
+                var paths1N = [];//paths1;
+                var totals1N = [];//totals1;
+                var paths2N = [];
+                var totals2N = [];
+                compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N);
 
-                $scope.csv1 = [];
-                angular.forEach($scope.paths1N, function (item, i) {
-                    if ($scope.totals1N[i] > 0) {
-                        var arr = [item.replace(/\//g, ':') + ", ", $scope.totals1N[i]];
-                        $scope.csv1.push(arr);
-                    }
-                    i++;
-                });
+                $scope.csv1 = toCsv(paths1N, totals1N);
 
-                $scope.csv2 = [];
-                angular.forEach($scope.paths2N, function (item, i) {
-                    if ($scope.totals2N[i] > 0) {
-                        var arr = [item.replace(/\//g, ':') + ", ", $scope.totals2N[i]];
-                        $scope.csv2.push(arr);
-                    }
-                    i++;
-                });
+                $scope.csv2 = toCsv(paths2N, totals2N);
+
                 $scope.dataIsLoaded = true;
                 $scope.status = "Visualizing data";
             });
@@ -54,37 +41,32 @@ angular
         });
 
         // A - B
-        function compare(paths1, totals1, paths2, totals2) {
-            $scope.n = 0;
+        function compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N) {
             paths1.forEach(function (item, indexA) {
                 var indexB = paths2.indexOf(item);
                 if (indexB >= 0) {
                     var a = totals1[indexA];
                     var b = totals2[indexB];
                     var diff = a - b;
-                    if (diff == 0) {
-                        $scope.n++;
-                    }
                     if (diff > 0) {
-                        $scope.totals1N.push(diff);
-                        $scope.paths1N.push(item);
+                        totals1N.push(diff);
+                        paths1N.push(item);
                     }
                     if (diff < 0) {
-                        $scope.totals2N.push(Math.abs(diff));
-                        $scope.paths2N.push(item);
+                        totals2N.push(Math.abs(diff));
+                        paths2N.push(item);
                     }
                 }
             });
         }
 
-        function toCsv(paths, totals){
-            angular.forEach(paths, function (item, i) {
-                if ($scope.totals1N[i] > 0) {
-                    var arr = [item.replace(/\//g, ':') + ", ", $scope.totals1N[i]];
-                    $scope.csv1.push(arr);
-                }
-                i++;
+        function toCsv(paths, totals) {
+            var csv = [];
+            paths.forEach(function (item, i) {
+                var arr = [item.replace(/\//g, ':') + ", ", totals[i]];
+                csv.push(arr);
             });
+            return csv;
         }
 
     })
@@ -98,10 +80,10 @@ function sunburst($http) {
 }
 
 function link($scope, element, attrs) {
-    showSunburst($scope.csv1, "1", 1);
-    showSunburst($scope.csv2, "2", 2);
+    showSunburst($scope.csv1, "1");
+    showSunburst($scope.csv2, "2");
 }
-function showSunburst(csv, id, part) {
+function showSunburst(csv, id) {
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
     var b = {
         w: 155,
@@ -172,7 +154,7 @@ function showSunburst(csv, id, part) {
     function createVisualization(json) {
 
         // Basic setup of page elements.
-        initializeBreadcrumbTrail();
+        if (id==1) initializeBreadcrumbTrail();
         drawLegend();
         d3.select("#togglelegend").on("click", toggleLegend);
 
@@ -191,7 +173,7 @@ function showSunburst(csv, id, part) {
         var path = vis.data([json]).selectAll("path")
             .data(nodes)
             .enter().append("svg:path")
-            .attr("id", "path" + id)
+            .attr("id", "path"+id)
             .attr("class", ".chart path")
             .attr("display", function (d) {
                 return d.depth ? null : "none";
@@ -229,6 +211,7 @@ function showSunburst(csv, id, part) {
             .style("visibility", "");
 
         var sequenceArray = getAncestors(d);
+        var sequenceArray2 = getAncestors2(d);
         updateBreadcrumbs(sequenceArray, percentageString);
 
         // Fade all the segments.
@@ -236,9 +219,14 @@ function showSunburst(csv, id, part) {
             .style("opacity", 0.3);
 
         // Then highlight only those that are an ancestor of the current segment.
-        d3.selectAll(".chart path")
+        d3.selectAll("#path1")
             .filter(function (node) {
                 return (sequenceArray.indexOf(node) >= 0);
+            })
+            .style("opacity", 1);
+        d3.selectAll("#path2")
+            .filter(function (node) {
+                return (sequenceArray2.indexOf(node) >= 0);
             })
             .style("opacity", 1);
 
@@ -279,17 +267,36 @@ function showSunburst(csv, id, part) {
         return path;
     }
 
+    function getAncestors2(node) {
+        var all = d3.selectAll("#path2");
+        var list = all[0];
+        var object = null;
+        var ls = list.filter(function ( obj ) {
+            return (obj.__data__.name === node.name && obj.__data__.parent.name == node.parent.name);
+        });
+        if (ls.length==0) return;
+        object = ls[0].__data__;
+        var path = [];
+        var current = object;
+        while (current.parent) {
+            path.unshift(current);
+            current = current.parent;
+        }
+        return path;
+    }
+
     function initializeBreadcrumbTrail() {
-        // Add the svg area.
+
         var trail = d3.select("#sequence").append("svg:svg")
-            .attr("width", width)
+            .attr("width", window.innerWidth)
             .attr("height", 50)
             .attr("id", "trail");
+
         // Add the label at the end, for the percentage.
         trail.append("svg:text")
             .attr("id", "endlabel")
             .style("fill", "#000");
-    }
+    };
 
     // Generate a string that describes the points of a breadcrumb polygon.
     function breadcrumbPoints(d, i) {
