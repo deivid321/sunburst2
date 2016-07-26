@@ -27,9 +27,9 @@ angular
                 $scope.status = "Calculating data";
                 calc();
                 $scope.csv1 = [];
-                angular.forEach($scope.paths1, function (item, i) {
-                    if ($scope.totals1[i] > 0) {
-                        var arr = [item.replace(/\//g, ':') + ", ", $scope.totals1[i]];
+                angular.forEach($scope.paths1N, function (item, i) {
+                    if ($scope.totals1N[i] > 0) {
+                        var arr = [item.replace(/\//g, ':') + ", ", $scope.totals1N[i]];
                         $scope.csv1.push(arr);
                     }
                     i++;
@@ -37,9 +37,9 @@ angular
 
                // calc2();
                 $scope.csv2 = [];
-                angular.forEach($scope.paths2, function (item, i) {
-                    if ($scope.totals2[i] > 0) {
-                        var arr = [item.replace(/\//g, ':') + ", ", $scope.totals2[i]];
+                angular.forEach($scope.paths2N, function (item, i) {
+                    if ($scope.totals2N[i] > 0) {
+                        var arr = [item.replace(/\//g, ':') + ", ", $scope.totals2N[i]];
                         $scope.csv2.push(arr);
                     }
                     i++;
@@ -80,12 +80,10 @@ angular
                 if (diff > 0) {
                     $scope.totals1N.push(diff);
                     $scope.paths1N.push(item);
-
                 }
                 if (diff < 0) {
-                    $scope.totals2 = Math.abs(diff);
-                    $scope.paths1.splice(indexB, 1);
-                    $scope.totals1.splice(indexB, 1);
+                    $scope.totals2N.push(Math.abs(diff));
+                    $scope.paths2N.push(item);
                 }
             }
         }
@@ -111,7 +109,7 @@ function sunburst($http) {
 
 function link($scope, element, attrs) {
     showSunburst($scope.csv1, "1", 1);
-    showSunburst($scope.csv2, "2", 2);
+    //showSunburst($scope.csv2, "2", 2);
 }
 function showSunburst(csv, id, part) {
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
@@ -248,34 +246,19 @@ function showSunburst(csv, id, part) {
         d3.selectAll(".chart path")
             .style("opacity", 0.3);
 
-
-        var arr = d3.selectAll(".chart path")
-            .filter(function (node) {
-                return (sequenceArray.indexOf(node) >= 0);
-            });
-        var visi = getAncestors2(d);
-        var aa = arr;
         // Then highlight only those that are an ancestor of the current segment.
-        d3.selectAll(".char path")
+        vis.selectAll("#path"+id)
             .filter(function (node) {
                 return (sequenceArray.indexOf(node) >= 0);
             })
             .style("opacity", 1);
-/*
-        d3.selectAll("#path2")
+
+        d3j.selectAll("#path"+id)
             .filter(function (node) {
                 return (sequenceArray2.indexOf(node) >= 0);
             })
-            .style("opacity", 1);
-*/
-/*
-        var vis2 = d3.select("#chart"+2);
-        vis2.selectAll("#path2")
-            .filter(function (node) {
-                return (sequenceArray.indexOf(node) >= 0);
-            })
             .style("opacity", 1)
-*/
+
     }
 
     // Restore everything to full opacity when moving off the visualization.
@@ -312,10 +295,7 @@ function showSunburst(csv, id, part) {
         }
         return path;
     }
-    function findByName() {
-        return true;
-       // return el === node.name;
-    }
+
     function getAncestors2(node) {
         var all = d3.selectAll("#path2");
         var list = all[0];
