@@ -30,6 +30,16 @@ angular
                 var totals2N = [];
                 compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N);
 
+                $scope.sum1 = totals1N.reduce(add, 0);
+                $scope.sum2 = totals2N.reduce(add, 0);
+
+                function add(a, b) {
+                    return a + b;
+                }
+
+                console.log("first sum:", $scope.sum1); // 6
+                console.log("second sum:", $scope.sum2); // 6
+
                 $scope.csv1 = toCsv(paths1N, totals1N);
 
                 $scope.csv2 = toCsv(paths2N, totals2N);
@@ -42,6 +52,7 @@ angular
 
         // A - B
         function compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N) {
+            // A - B
             paths1.forEach(function (item, indexA) {
                 var indexB = paths2.indexOf(item);
                 if (indexB >= 0) {
@@ -56,6 +67,16 @@ angular
                         totals2N.push(Math.abs(diff));
                         paths2N.push(item);
                     }
+                    paths2.splice(indexB, 1);
+                    totals2.splice(indexB, 1);
+                }
+            });
+            //Add left B elements which are > 0
+            paths2.forEach(function (item, indexB) {
+                var val = parseInt(totals2[indexB]);
+                if (val > 0) {
+                    totals2N.push(val);
+                    paths2N.push(item);
                 }
             });
         }
@@ -63,8 +84,10 @@ angular
         function toCsv(paths, totals) {
             var csv = [];
             paths.forEach(function (item, i) {
-                var arr = [item.replace(/\//g, ':') + ", ", totals[i]];
-                csv.push(arr);
+                if (totals[i] > 0) {
+                    var arr = [item.replace(/\//g, ':') + ", ", totals[i]];
+                    csv.push(arr);
+                }
             });
             return csv;
         }
@@ -101,7 +124,7 @@ function showSunburst(csv, id) {
     };
 
     // Dimensions of sunburst frame
-    var width = (window.innerWidth-(li.w+20)*2) / 2;// - li.w - 40;
+    var width = (window.innerWidth - (li.w + 20) * 2) / 2;// - li.w - 40;
     var height = window.innerHeight / 2;
     var radius = Math.min(width, height) / 2;
 
@@ -113,12 +136,13 @@ function showSunburst(csv, id) {
 
     var vis = d3.select("#chart" + id).append("svg:svg")
         .attr("class", "chart")
+        .attr("id", "chart"+id)
         .attr("width", width)
         .attr("x", 0)
         .attr("height", height)
         .append("svg:g")
         .attr("id", "container" + id)
-        .attr("transform", "translate(" + width/2 + "," +height/2 + ")");
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
     var partition = d3.layout.partition()
         .size([2 * Math.PI, radius * radius])
@@ -156,9 +180,9 @@ function showSunburst(csv, id) {
         // Basic setup of page elements.
         if (id == 1) initializeBreadcrumbTrail();
         drawLegend();
-        if (id==1)
+        if (id == 1)
             d3.select("#togglelegend1").on("click", toggleLegend1);
-        else if (id==2) d3.select("#togglelegend2").on("click", toggleLegend2);
+        else if (id == 2) d3.select("#togglelegend2").on("click", toggleLegend2);
 
         // Bounding circle underneath the sunburst, to make it easier to detect
         // when the mouse leaves the parent g.
@@ -204,12 +228,12 @@ function showSunburst(csv, id) {
             percentageString = "< 0.05%";
         }
 
-        d3.selectAll(".percentage")
+        d3.selectAll("#percentage"+id)
             .text(percentageString);
 
-        d3.selectAll(".explanation")
-            .style("left", (width-100)/2 + "px")//((window.innerWidth - 140) / 2).toString() + "px")
-            .style("top", (height+83)/2 + "px")//((window.innerHeight - 80) / 2).toString() + "px")
+        d3.selectAll("#explanation"+id)
+            .style("left", (width - 100) / 2 + "px")//((window.innerWidth - 140) / 2).toString() + "px")
+            .style("top", (height + 83) / 2 + "px")//((window.innerHeight - 80) / 2).toString() + "px")
             .style("visibility", "");
 
         var basicPath = [];
@@ -247,7 +271,7 @@ function showSunburst(csv, id) {
                 d3.select(this).on("mouseover", mouseover);
             });
 
-        d3.select("#explanation" + id)
+        d3.selectAll(".explanation")
             .style("visibility", "hidden");
     }
 
@@ -393,6 +417,7 @@ function showSunburst(csv, id) {
     function toggleLegend1() {
         toggleLegend(1);
     }
+
     function toggleLegend2() {
         toggleLegend(2);
     }
@@ -463,7 +488,7 @@ function showSunburst(csv, id) {
         var c = (i & 0x00FFFFFF)
             .toString(16)
             .toUpperCase();
-        return "#"+"00000".substring(0, 6 - c.length) + c;
+        return "#" + "00000".substring(0, 6 - c.length) + c;
     }
 }
 
