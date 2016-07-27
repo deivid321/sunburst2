@@ -81,7 +81,7 @@ function sunburst($http) {
 
 function link($scope, element, attrs) {
     showSunburst($scope.csv1, "1");
-    showSunburst($scope.csv1, "2");
+    showSunburst($scope.csv2, "2");
 }
 function showSunburst(csv, id) {
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
@@ -101,7 +101,7 @@ function showSunburst(csv, id) {
     };
 
     // Dimensions of sunburst frame
-    var width = window.innerWidth / 2 - li.w - 40;
+    var width = (window.innerWidth-(li.w+20)*2) / 2;// - li.w - 40;
     var height = window.innerHeight / 2;
     var radius = Math.min(width, height) / 2;
 
@@ -463,7 +463,7 @@ function showSunburst(csv, id) {
         var c = (i & 0x00FFFFFF)
             .toString(16)
             .toUpperCase();
-        return "00000".substring(0, 6 - c.length) + c;
+        return "#"+"00000".substring(0, 6 - c.length) + c;
     }
 }
 
