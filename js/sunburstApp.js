@@ -81,7 +81,7 @@ function sunburst($http) {
 
 function link($scope, element, attrs) {
     showSunburst($scope.csv1, "1");
-    showSunburst($scope.csv2, "2");
+    showSunburst($scope.csv1, "2");
 }
 function showSunburst(csv, id) {
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
@@ -118,7 +118,7 @@ function showSunburst(csv, id) {
         .attr("height", height)
         .append("svg:g")
         .attr("id", "container" + id)
-        .attr("transform", "translate(" + window.innerWidth / 2 / 2 + "," + window.innerHeight / 2 / 2 + ")");
+        .attr("transform", "translate(" + width/2 + "," +height/2 + ")");
 
     var partition = d3.layout.partition()
         .size([2 * Math.PI, radius * radius])
@@ -156,7 +156,9 @@ function showSunburst(csv, id) {
         // Basic setup of page elements.
         if (id == 1) initializeBreadcrumbTrail();
         drawLegend();
-        d3.select("#togglelegend").on("click", toggleLegend);
+        if (id==1)
+            d3.select("#togglelegend1").on("click", toggleLegend1);
+        else if (id==2) d3.select("#togglelegend2").on("click", toggleLegend2);
 
         // Bounding circle underneath the sunburst, to make it easier to detect
         // when the mouse leaves the parent g.
@@ -202,17 +204,17 @@ function showSunburst(csv, id) {
             percentageString = "< 0.05%";
         }
 
-        d3.select("#percentage" + id)
+        d3.selectAll(".percentage")
             .text(percentageString);
 
-        d3.select("#explanation" + id)
-            .style("left", ((window.innerWidth - 140) / 2).toString() + "px")
-            .style("top", ((window.innerHeight - 80) / 2).toString() + "px")
+        d3.selectAll(".explanation")
+            .style("left", (width-100)/2 + "px")//((window.innerWidth - 140) / 2).toString() + "px")
+            .style("top", (height+83)/2 + "px")//((window.innerHeight - 80) / 2).toString() + "px")
             .style("visibility", "");
 
         var basicPath = [];
         var sequenceArray = getAncestors(d, basicPath);
-        updateBreadcrumbs(basicPath, percentageString); //TODO need to send only one sequence when there are two
+        updateBreadcrumbs(basicPath, percentageString);
 
         // Fade all the segments.
         d3.selectAll(".chart path")
@@ -388,7 +390,14 @@ function showSunburst(csv, id) {
             });
     }
 
-    function toggleLegend() {
+    function toggleLegend1() {
+        toggleLegend(1);
+    }
+    function toggleLegend2() {
+        toggleLegend(2);
+    }
+
+    function toggleLegend(id) {
         var legend = d3.select("#legend" + id);
         if (legend.style("visibility") == "hidden") {
             legend.style("visibility", "");

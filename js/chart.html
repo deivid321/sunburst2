@@ -1,40 +1,40 @@
-<!--<div id="sidebar1" class="sidebar">
-    <input type="checkbox" id="togglelegend"> Legend
+<div id="sequence"></div>
+<div id="sidebar1" class="sidebar">
+    <input type="checkbox" id="togglelegend1" value="1"> Legend
     <br/>
-    <div id="legend1" class="legend" style="visibility: hidden;"></div>
-</div> -->
+    <div id="legend1" class="legend" style="visibility: visible;"></div>
+</div>
 <div id="main">
-    <div id="sequence"></div>
     <div id="chart1" class="chart">
         <h1 align="center">Comparison of A - B > 0</h1>
-        <!--<div id="explanation1" class="explanation" style="visibility: hidden;">
+        <div id="explanation1" class="explanation" style="visibility: hidden;">
             <span id="percentage1" class="percentage"></span>
-            <br/> is the percentage of total size in all directories
-        </div> -->
+            <br/> is the percentage of total size difference
+        </div>
     </div>
     <div id="chart2" class="chart">
         <h1 align="center">Comparison of B - A > 0</h1>
-         <!-- <div id="explanation2" class="explanation" style="visibility: hidden;">
+          <div id="explanation2" class="explanation" style="visibility: hidden;">
              <span id="percentage2" class="percentage"></span>
-             <br/> is the percentage of total size in all directories
-         </div> -->
+             <br/> is the percentage of total size difference
+         </div>
     </div>
     <br>
 </div>
-<!--
-<div id="sidebar">
-    <input type="checkbox" id="togglelegend"> Legend
+<div id="sidebar2">
+    <input type="checkbox" id="togglelegend2"> Legend
     <br/>
-    <div id="legend" style="visibility: hidden;"></div>
-</div> -->
+    <div id="legend2" style="visibility: visible;"></div>
+</div>
 
 <style>
     #main {
-
+        margin: 0 180px 0 180px;
     }
 
     #sequence {
         height: 50px;
+        margin: 0 180px 0 180px;
     }
 
     .sidebar {
@@ -61,13 +61,13 @@
 
     .explanation {
         position: relative;
-        width: 140px;
+        width: 100px;
         text-align: center;
         color: #666;
         z-index: -1;
     }
 
     .percentage {
-        font-size: 2.5em;
+        font-size: 1.8em;
     }
 </style>
