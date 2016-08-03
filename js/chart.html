@@ -1,14 +1,10 @@
 <div id="sequence"></div>
-<div id="sidebar1" class="sidebar">
-    <input type="checkbox" id="togglelegend1" value="1"> Legend
-    <br/>
-    <div id="legend1" class="legend" style="visibility: visible;"></div>
-</div>
 <div id="main">
     <div id="chart1" class="chart">
         <h1 align="center">Comparison of A - B > 0</h1>
         <div id="explanation1" class="explanation" style="visibility: hidden;">
             <span id="percentage1" class="percentage"></span>
+            <span id="size1" class="size"></span>
             <br/> is the percentage of total size difference
         </div>
     </div>
@@ -21,11 +17,6 @@
     </div>
     <br>
 </div>
-<div id="sidebar2">
-    <input type="checkbox" id="togglelegend2"> Legend
-    <br/>
-    <div id="legend2" style="visibility: visible;"></div>
-</div>
 <div>
     First chart size: {{sum1}}
     Second chart size: {{sum2}}
@@ -33,7 +24,7 @@
 
 <style>
     #main {
-        margin: 0 180px 0 180px;
+        margin: 0 20px 0 20px;
     }
 
     #sequence {
@@ -41,15 +32,7 @@
         margin: 0 180px 0 180px;
     }
 
-    .sidebar {
-        float: left;
-    }
-
-    .legend {
-        padding: 10px 0 0 3px;
-    }
-
-    #sequence text, #legend text {
+    #sequence text {
         font-weight: 600;
         fill: #fff;
     }
@@ -73,5 +56,9 @@
 
     .percentage {
         font-size: 1.8em;
+    }
+
+    .size{
+        font-size: 1.3em;
     }
 </style>

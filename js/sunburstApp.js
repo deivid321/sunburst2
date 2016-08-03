@@ -1,98 +1,171 @@
 angular
     .module('sunburstApp', [])
     .controller('sunburstController', function ($scope, $http) {
-        $scope.status = "Loading data";
-        $scope.dataIsLoaded = false;
-        var p1 = $http({
-            url: "data/MemoryJson.json",
-            method: 'GET',
-        });
-
-        var p2 = $http({
-            url: "data/MemoryJson2.json",
-            method: 'GET',
-        });
-
-        p1.then(function (response) {
-            $scope.status1 = response.statusText;
-            var paths1 = angular.fromJson(response.data.histograms[0].path);
-            var totals1 = angular.fromJson(response.data.histograms[0].total);
-
-            p2.then(function (response2) {
-                $scope.status2 = response2.statusText;
-                var paths2 = angular.fromJson(response2.data.histograms[0].path);
-                var totals2 = angular.fromJson(response2.data.histograms[0].total);
-                $scope.status = "Calculating data";
-
-                var paths1N = [];//paths1;
-                var totals1N = [];//totals1;
-                var paths2N = [];
-                var totals2N = [];
-                compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N);
-
-                $scope.sum1 = totals1N.reduce(add, 0);
-                $scope.sum2 = totals2N.reduce(add, 0);
-
-                function add(a, b) {
-                    return a + b;
-                }
-
-                console.log("first sum:", $scope.sum1); // 6
-                console.log("second sum:", $scope.sum2); // 6
-
-                $scope.csv1 = toCsv(paths1N, totals1N);
-
-                $scope.csv2 = toCsv(paths2N, totals2N);
-
-                $scope.dataIsLoaded = true;
-                $scope.status = "Visualizing data";
+            $scope.status = "Loading data";
+            $scope.dataIsLoaded = false;
+            var p1 = $http({
+                url: "data/MemoryJson.json",
+                method: 'GET',
             });
 
-        });
+            var p2 = $http({
+                url: "data/MemoryJson2.json",
+                method: 'GET',
+            });
 
-        // A - B
-        function compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N) {
+            p1.then(function (response) {
+                $scope.status1 = response.statusText;
+                var paths1 = angular.fromJson(response.data.histograms[0].path);
+                var totals1 = angular.fromJson(response.data.histograms[0].total);
+
+                p2.then(function (response2) {
+                    $scope.status2 = response2.statusText;
+                    var paths2 = angular.fromJson(response2.data.histograms[0].path);
+                    var totals2 = angular.fromJson(response2.data.histograms[0].total);
+                    $scope.status = "Calculating data";
+
+                    var paths1N = [];//paths1;
+                    var totals1N = [];//totals1;
+                    var paths2N = [];
+                    var totals2N = [];
+                    compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N);
+
+                    $scope.sum1 = totals1N.reduce(add, 0);
+                    $scope.sum2 = totals2N.reduce(add, 0);
+
+                    function add(a, b) {
+                        return a + b;
+                    }
+
+                    console.log("first sum:", $scope.sum1); // 6
+                    console.log("second sum:", $scope.sum2); // 6
+
+                    var colors = {};
+                    $scope.json1 = buildHierarchy(paths1N, totals1N, colors);
+                    $scope.colors1 = colors;
+                    colors = {};
+                    $scope.json2 = buildHierarchy(paths2N, totals2N, colors);
+                    $scope.colors2 = colors;
+
+                    $scope.dataIsLoaded = true;
+                    $scope.status = "Visualizing data";
+                });
+
+            });
+
+            function buildHierarchy(paths, totals, colors) {
+                var root = {"name": "root", "children": []};
+                for (var i = 0; i < paths.length; i++) {
+                    var sequence = paths[i];
+                    var size = totals[i];
+                    if (isNaN(size)) { // e.g. if this is a header row
+                        continue;
+                    }
+                    var parts = sequence.split("\/");
+                    var currentNode = root;
+                    for (var j = 0; j < parts.length; j++) {
+                        var children = currentNode["children"];
+                        var nodeName = parts[j];
+                        colors[nodeName] = intToRGB(hashCode(nodeName));
+                        var childNode;
+                        if (j + 1 < parts.length) {
+                            // Not yet at the end of the sequence; move down the tree.
+                            var foundChild = false;
+                            for (var k = 0; k < children.length; k++) {
+                                if (children[k]["name"] == nodeName) {
+                                    childNode = children[k];
+                                    foundChild = true;
+                                    break;
+                                }
+                            }
+                            // If we don't already have a child node for this branch, create it.
+                            if (!foundChild) {
+                                childNode = {"name": nodeName, "children": []};
+                                children.push(childNode);
+                            }
+                            currentNode = childNode;
+                        } else {
+                            // Reached the end of the sequence; create a leaf node.
+                            childNode = {"name": nodeName, "size": size};
+                            children.push(childNode);
+                        }
+                    }
+                }
+                return root;
+            };
+            function hashCode(str) {
+                var hash = 0;
+                for (var i = 0; i < str.length; i++) {
+                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                return hash;
+            }
+
+            function intToRGB(i) {
+                var c = (i & 0x00FFFFFF)
+                    .toString(16)
+                    .toUpperCase();
+                return "#" + "00000".substring(0, 6 - c.length) + c;
+            }
+
             // A - B
-            paths1.forEach(function (item, indexA) {
-                var indexB = paths2.indexOf(item);
-                if (indexB >= 0) {
-                    var a = totals1[indexA];
-                    var b = totals2[indexB];
-                    var diff = a - b;
-                    if (diff > 0) {
-                        totals1N.push(diff);
-                        paths1N.push(item);
-                    }
-                    if (diff < 0) {
-                        totals2N.push(Math.abs(diff));
-                        paths2N.push(item);
-                    }
-                    paths2.splice(indexB, 1);
-                    totals2.splice(indexB, 1);
-                }
-            });
-            //Add left B elements which are > 0
-            paths2.forEach(function (item, indexB) {
-                var val = parseInt(totals2[indexB]);
-                if (val > 0) {
-                    totals2N.push(val);
-                    paths2N.push(item);
-                }
-            });
-        }
+            function compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N) {
+                // A - B
+                var aa = 0;
+                var bb = 0;
+                var n1 = paths1.length;
+                paths1N = new Array(n1);
+                totals1N = new Array(n1);
+                var n2 = paths2.length;
+                paths2N = new Array(n2);
+                totals2N = new Array(n2);
 
-        function toCsv(paths, totals) {
-            var csv = [];
-            paths.forEach(function (item, i) {
-                if (totals[i] > 0) {
-                    var arr = [item.replace(/\//g, ':') + ", ", totals[i]];
-                    csv.push(arr);
-                }
-            });
-            return csv;
-        }
+                for (var indexA = 0; indexA < n1; indexA++) {
+                    var item = paths1[indexA];
+                    var indexB = paths2.indexOf(item);
+                    if (indexB >= 0) {
+                        var a = totals1[indexA];
+                        var b = totals2[indexB];
+                        var diff = a - b;
+                        if (diff > 0) {
+                            totals1N[aa] = diff;
+                            paths1N[aa] = item;
+                            aa++;
+                            //totals1N.push(diff);
+                            //paths1N.push(item);
+                        }
+                        if (diff < 0) {
+                            totals2N[bb] = Math.abs(diff);
+                            paths2N[bb] = item;
+                            //totals2N.push(Math.abs(diff));
+                            //paths2N.push(item);
+                            bb++;
+                        }
+                        //paths2.splice(indexB, 1);
+                        //totals2.splice(indexB, 1);
+                        totals2[indexB] = -1;
 
-    })
+                    }
+                }
+                paths1N = paths1N.slice(0, aa);
+                totals1N = totals1N.slice(0, aa);
+                //Add left B elements which are > 0
+
+                for (var indexB = 0; indexB < n2; indexB++) {
+                    var val = parseInt(totals2[indexB]);
+                    if (val > 0) {
+                        //totals2N.push(val);
+                        totals2N[bb] = val;
+                        //paths2N.push(paths2[indexB]);
+                        paths2N[bb] = paths2[indexB];
+                        bb++;
+                    }
+                }
+                paths2N = paths2N.slice(0, bb);
+                totals2N = totals2N.slice(0, bb);
+            }
+        }
+    )
     .directive('sunburstDirective', sunburst);
 
 function sunburst($http) {
@@ -103,10 +176,10 @@ function sunburst($http) {
 }
 
 function link($scope, element, attrs) {
-    showSunburst($scope.csv1, "1");
-    showSunburst($scope.csv2, "2");
+    showSunburst($scope.json1, $scope.colors1, "1");
+    showSunburst($scope.json2, $scope.colors2, "2");
 }
-function showSunburst(csv, id) {
+function showSunburst(json, colors, id) {
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
     var b = {
         w: 155,
@@ -115,28 +188,17 @@ function showSunburst(csv, id) {
         t: 10
     };
 
-    // Dimensions of legend item: width, height, spacing, radius of rounded rect.
-    var li = {
-        w: 180,
-        h: 30,
-        s: 3,
-        r: 3
-    };
-
     // Dimensions of sunburst frame
-    var width = (window.innerWidth - (li.w + 20) * 2) / 2;// - li.w - 40;
+    var width = (window.innerWidth - 60) / 2;
     var height = window.innerHeight / 2;
     var radius = Math.min(width, height) / 2;
-
-    // Mapping of step names to colors is set in build Hierarchy
-    var colors = [];
 
     // Total size of all segments; we set this later, after loading the data.
     var totalSize = 0;
 
     var vis = d3.select("#chart" + id).append("svg:svg")
         .attr("class", "chart")
-        .attr("id", "chart"+id)
+        .attr("id", "chart" + id)
         .attr("width", width)
         .attr("x", 0)
         .attr("height", height)
@@ -164,25 +226,13 @@ function showSunburst(csv, id) {
             return Math.sqrt(d.y + d.dy);
         });
 
-    // Use d3.text and d3.csv.parseRows so that we do not need to have a header
-    // row, and can receive the csv as an array of arrays.
-    //d3.text("labas.csv", function(text) {
-    //var csv = d3.csv.parseRows($scope.data);
-
-    //Takes list of 2 columns array
-    var json = buildHierarchy(csv);
     createVisualization(json);
-    // });
 
     // Main function to draw and set up the visualization, once we have the data.
     function createVisualization(json) {
 
         // Basic setup of page elements.
         if (id == 1) initializeBreadcrumbTrail();
-        drawLegend();
-        if (id == 1)
-            d3.select("#togglelegend1").on("click", toggleLegend1);
-        else if (id == 2) d3.select("#togglelegend2").on("click", toggleLegend2);
 
         // Bounding circle underneath the sunburst, to make it easier to detect
         // when the mouse leaves the parent g.
@@ -228,12 +278,15 @@ function showSunburst(csv, id) {
             percentageString = "< 0.05%";
         }
 
-        d3.selectAll("#percentage"+id)
+        d3.selectAll("#percentage" + id)
             .text(percentageString);
 
-        d3.selectAll("#explanation"+id)
-            .style("left", (width - 100) / 2 + "px")//((window.innerWidth - 140) / 2).toString() + "px")
-            .style("top", (height + 83) / 2 + "px")//((window.innerHeight - 80) / 2).toString() + "px")
+        d3.select("#size" + id)
+            .text(d.value + "(B)");
+
+        d3.selectAll("#explanation" + id)
+            .style("left", (width - 100) / 2 + "px")
+            .style("top", (height + 102) / 2 + "px")
             .style("visibility", "");
 
         var basicPath = [];
@@ -299,9 +352,7 @@ function showSunburst(csv, id) {
                 current = current.parent;
             }
             firstTime = 0;
-
-        })
-
+        });
         return path;
     }
 
@@ -374,121 +425,12 @@ function showSunburst(csv, id) {
             .attr("y", b.h / 2)
             .attr("dy", "0.35em")
             .attr("text-anchor", "middle")
-            .text(percentageString);
+            .text(percentageString + " \n" + nodeArray[nodeArray.length - 1].value + "B");
 
         // Make the breadcrumb trail visible, if it's hidden.
         d3.select("#trail")
             .style("visibility", "");
-
     }
 
-    function drawLegend() {
-
-        var legend = d3.select("#legend" + id).append("svg:svg")
-            .attr("width", li.w)
-            .attr("height", d3.keys(colors).length * (li.h + li.s));
-
-        var g = legend.selectAll("g")
-            .data(d3.entries(colors))
-            .enter().append("svg:g")
-            .attr("transform", function (d, i) {
-                return "translate(0," + i * (li.h + li.s) + ")";
-            });
-
-        g.append("svg:rect")
-            .attr("rx", li.r)
-            .attr("ry", li.r)
-            .attr("width", li.w)
-            .attr("height", li.h)
-            .style("fill", function (d) {
-                return d.value;
-            });
-
-        g.append("svg:text")
-            .attr("x", li.w / 2)
-            .attr("y", li.h / 2)
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "middle")
-            .text(function (d) {
-                return d.key;
-            });
-    }
-
-    function toggleLegend1() {
-        toggleLegend(1);
-    }
-
-    function toggleLegend2() {
-        toggleLegend(2);
-    }
-
-    function toggleLegend(id) {
-        var legend = d3.select("#legend" + id);
-        if (legend.style("visibility") == "hidden") {
-            legend.style("visibility", "");
-        } else {
-            legend.style("visibility", "hidden");
-        }
-    }
-
-    // Take a 2-column CSV and transform it into a hierarchical structure suitable
-    // for a partition layout. The first column is a sequence of step names, from
-    // root to leaf, separated by hyphens. The second column is a count of how
-    // often that sequence occurred.
-    function buildHierarchy(csv) {
-        var root = {"name": "root", "children": []};
-        for (var i = 0; i < csv.length; i++) {
-            var sequence = csv[i][0];
-            var size = +csv[i][1];
-            if (isNaN(size)) { // e.g. if this is a header row
-                continue;
-            }
-            var parts = sequence.split(":");
-            var currentNode = root;
-            for (var j = 0; j < parts.length; j++) {
-                var children = currentNode["children"];
-                var nodeName = parts[j];
-                colors[nodeName] = intToRGB(hashCode(nodeName));
-                var childNode;
-                if (j + 1 < parts.length) {
-                    // Not yet at the end of the sequence; move down the tree.
-                    var foundChild = false;
-                    for (var k = 0; k < children.length; k++) {
-                        if (children[k]["name"] == nodeName) {
-                            childNode = children[k];
-                            foundChild = true;
-                            break;
-                        }
-                    }
-                    // If we don't already have a child node for this branch, create it.
-                    if (!foundChild) {
-                        childNode = {"name": nodeName, "children": []};
-                        children.push(childNode);
-                    }
-                    currentNode = childNode;
-                } else {
-                    // Reached the end of the sequence; create a leaf node.
-                    childNode = {"name": nodeName, "size": size};
-                    children.push(childNode);
-                }
-            }
-        }
-        return root;
-    };
-
-    function hashCode(str) {
-        var hash = 0;
-        for (var i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return hash;
-    }
-
-    function intToRGB(i) {
-        var c = (i & 0x00FFFFFF)
-            .toString(16)
-            .toUpperCase();
-        return "#" + "00000".substring(0, 6 - c.length) + c;
-    }
 }
 
