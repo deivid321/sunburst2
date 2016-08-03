@@ -24,27 +24,23 @@ angular
                     var totals2 = angular.fromJson(response2.data.histograms[0].total);
                     $scope.status = "Calculating data";
 
-                    var paths1N = [];//paths1;
-                    var totals1N = [];//totals1;
-                    var paths2N = [];
-                    var totals2N = [];
-                    compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N);
+                    compare(paths1, totals1, paths2, totals2);
 
-                    $scope.sum1 = totals1N.reduce(add, 0);
-                    $scope.sum2 = totals2N.reduce(add, 0);
+                    //  $scope.sum1 = totals1N.reduce(add, 0);
+                    // $scope.sum2 = totals2N.reduce(add, 0);
 
                     function add(a, b) {
                         return a + b;
                     }
 
-                    console.log("first sum:", $scope.sum1); // 6
-                    console.log("second sum:", $scope.sum2); // 6
+                    // console.log("first sum:", $scope.sum1); // 6
+                    // console.log("second sum:", $scope.sum2); // 6
 
                     var colors = {};
-                    $scope.json1 = buildHierarchy(paths1N, totals1N, colors);
+                    $scope.json1 = buildHierarchy(paths1, totals1, colors);
                     $scope.colors1 = colors;
                     colors = {};
-                    $scope.json2 = buildHierarchy(paths2N, totals2N, colors);
+                    $scope.json2 = buildHierarchy(paths2, totals2, colors);
                     $scope.colors2 = colors;
 
                     $scope.dataIsLoaded = true;
@@ -56,11 +52,11 @@ angular
             function buildHierarchy(paths, totals, colors) {
                 var root = {"name": "root", "children": []};
                 for (var i = 0; i < paths.length; i++) {
-                    var sequence = paths[i];
                     var size = totals[i];
-                    if (isNaN(size)) { // e.g. if this is a header row
+                    if (size <= 0) {
                         continue;
                     }
+                    var sequence = paths[i];
                     var parts = sequence.split("\/");
                     var currentNode = root;
                     for (var j = 0; j < parts.length; j++) {
@@ -109,60 +105,56 @@ angular
             }
 
             // A - B
-            function compare(paths1, totals1, paths2, totals2, paths1N, totals1N, paths2N, totals2N) {
+            function compare(paths2, totals2, paths1, totals1) {
                 // A - B
-                var aa = 0;
-                var bb = 0;
+                var n = paths2.length;
+                var i = 0;
+                var k = 0;
+                while (i < n) {
+                    if (totals2[i] <= 0){
+                        totals2.splice(i, 1);
+                        paths2.splice(i, 1);
+                        i--;
+                        n--;
+                        k++;
+                    }
+                    i++;
+                }
                 var n1 = paths1.length;
-                paths1N = new Array(n1);
-                totals1N = new Array(n1);
                 var n2 = paths2.length;
-                paths2N = new Array(n2);
-                totals2N = new Array(n2);
-
-                for (var indexA = 0; indexA < n1; indexA++) {
+                var indexA = 0;
+                while (indexA < n1) {
+                    var a = totals1[indexA];
+                    if (a <= 0){
+                        totals1[indexA] = -1;
+                        indexA++;
+                        continue;
+                    }
                     var item = paths1[indexA];
                     var indexB = paths2.indexOf(item);
                     if (indexB >= 0) {
-                        var a = totals1[indexA];
                         var b = totals2[indexB];
                         var diff = a - b;
+                        if (diff == 0) {
+                            totals1[indexA] = -1;
+                            totals2[indexB] = -1;
+                            totals2.splice(indexB, 1);
+                            paths2.splice(indexB, 1);
+                        }
                         if (diff > 0) {
-                            totals1N[aa] = diff;
-                            paths1N[aa] = item;
-                            aa++;
-                            //totals1N.push(diff);
-                            //paths1N.push(item);
+                            totals1[indexA] = diff;
+                            totals2[indexB] = -1;
+                            totals2.splice(indexB, 1);
+                            paths2.splice(indexB, 1);
                         }
                         if (diff < 0) {
-                            totals2N[bb] = Math.abs(diff);
-                            paths2N[bb] = item;
-                            //totals2N.push(Math.abs(diff));
-                            //paths2N.push(item);
-                            bb++;
+                            totals2[indexB] = Math.abs(diff);
+                            totals1[indexA] = -1;
                         }
-                        //paths2.splice(indexB, 1);
-                        //totals2.splice(indexB, 1);
-                        totals2[indexB] = -1;
-
                     }
+                    indexA++;
                 }
-                paths1N = paths1N.slice(0, aa);
-                totals1N = totals1N.slice(0, aa);
-                //Add left B elements which are > 0
 
-                for (var indexB = 0; indexB < n2; indexB++) {
-                    var val = parseInt(totals2[indexB]);
-                    if (val > 0) {
-                        //totals2N.push(val);
-                        totals2N[bb] = val;
-                        //paths2N.push(paths2[indexB]);
-                        paths2N[bb] = paths2[indexB];
-                        bb++;
-                    }
-                }
-                paths2N = paths2N.slice(0, bb);
-                totals2N = totals2N.slice(0, bb);
             }
         }
     )
