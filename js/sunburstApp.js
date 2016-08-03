@@ -121,9 +121,7 @@ angular
                     i++;
                 }
                 var n1 = paths1.length;
-                var n2 = paths2.length;
-                var indexA = 0;
-                while (indexA < n1) {
+                for (var indexA = 0; indexA < n1; indexA++) {
                     var a = totals1[indexA];
                     if (a <= 0){
                         totals1[indexA] = -1;
@@ -152,9 +150,7 @@ angular
                             totals1[indexA] = -1;
                         }
                     }
-                    indexA++;
                 }
-
             }
         }
     )
