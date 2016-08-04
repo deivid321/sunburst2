@@ -1,7 +1,6 @@
 angular
     .module('sunburstApp', [])
     .controller('sunburstController', function ($scope, $http) {
-            $scope.status = "Loading data";
             $scope.dataIsLoaded = false;
             var p1 = $http({
                 url: "data/MemoryJson.json",
@@ -9,7 +8,7 @@ angular
             });
 
             var p2 = $http({
-                url: "data/MemoryJson2.json",
+                url: "data/MemoryJson3.json",
                 method: 'GET',
             });
 
@@ -22,19 +21,8 @@ angular
                     $scope.status2 = response2.statusText;
                     var paths2 = angular.fromJson(response2.data.histograms[0].path);
                     var totals2 = angular.fromJson(response2.data.histograms[0].total);
-                    $scope.status = "Calculating data";
 
                     compare(paths1, totals1, paths2, totals2);
-
-                    //  $scope.sum1 = totals1N.reduce(add, 0);
-                    // $scope.sum2 = totals2N.reduce(add, 0);
-
-                    function add(a, b) {
-                        return a + b;
-                    }
-
-                    // console.log("first sum:", $scope.sum1); // 6
-                    // console.log("second sum:", $scope.sum2); // 6
 
                     var colors = {};
                     $scope.json1 = buildHierarchy(paths1, totals1, colors);
@@ -44,7 +32,6 @@ angular
                     $scope.colors2 = colors;
 
                     $scope.dataIsLoaded = true;
-                    $scope.status = "Visualizing data";
                 });
 
             });
@@ -52,7 +39,7 @@ angular
             function buildHierarchy(paths, totals, colors) {
                 var root = {"name": "root", "children": []};
                 for (var i = 0; i < paths.length; i++) {
-                    var size = totals[i];
+                    var size = parseInt(totals[i]);
                     if (size <= 0) {
                         continue;
                     }
@@ -104,7 +91,7 @@ angular
                 return "#" + "00000".substring(0, 6 - c.length) + c;
             }
 
-            function binaryIndexOf(array, key) {
+            function getIndex(array, key) {
                 var lo = 0,
                     hi = array.length - 1,
                     mid,
@@ -124,53 +111,33 @@ angular
             }
 
             // A - B
-            function compare(paths2, totals2, paths1, totals1) {
-                // A - B
-                var n = paths2.length;
-                var i = 0;
-                var k = 0;
-                while (i < n) {
-                    if (totals2[i] <= 0) {
-                        totals2.splice(i, 1);
-                        paths2.splice(i, 1);
-                        i--;
-                        n--;
-                        k++;
-                    }
-                    i++;
-                }
-                var n1 = paths1.length;
-                for (var indexA = 0; indexA < n1; indexA++) {
-                    var a = totals1[indexA];
-                    if (a <= 0) {
-                        totals1[indexA] = -1;
-                        indexA++;
+            function compare(paths1, totals1, paths2, totals2) {
+                for (var indA = 0; indA < paths1.length; indA++) {
+                    var valA = parseInt(totals1[indA]);
+                    if (valA <= 0) {
                         continue;
                     }
-                    var item = paths1[indexA];
-                    var indexB = binaryIndexOf(paths2, item);
-                    if (indexB >= 0) {
-                        var b = totals2[indexB];
-                        var diff = a - b;
+                    var item = paths1[indA];
+                    var indB = getIndex(paths2, item);
+                    if (indB >= 0) {
+                        var valB = totals2[indB];
+                        var diff = valA - valB;
                         if (diff == 0) {
-                            totals1[indexA] = -1;
-                            totals2[indexB] = -1;
-                            totals2.splice(indexB, 1);
-                            paths2.splice(indexB, 1);
+                            totals1[indA] = -1;
+                            totals2[indB] = -1;
                         }
                         if (diff > 0) {
-                            totals1[indexA] = diff;
-                            totals2[indexB] = -1;
-                            totals2.splice(indexB, 1);
-                            paths2.splice(indexB, 1);
+                            totals1[indA] = diff;
+                            totals2[indB] = -1;
                         }
                         if (diff < 0) {
-                            totals2[indexB] = Math.abs(diff);
-                            totals1[indexA] = -1;
+                            totals2[indB] = Math.abs(diff);
+                            totals1[indA] = -1;
                         }
                     }
                 }
             }
+
         }
     )
     .directive('sunburstDirective', sunburst);
@@ -186,6 +153,7 @@ function link($scope, element, attrs) {
     showSunburst($scope.json1, $scope.colors1, "1");
     showSunburst($scope.json2, $scope.colors2, "2");
 }
+
 function showSunburst(json, colors, id) {
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
     var b = {
