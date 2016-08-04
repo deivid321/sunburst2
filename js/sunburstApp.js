@@ -104,6 +104,25 @@ angular
                 return "#" + "00000".substring(0, 6 - c.length) + c;
             }
 
+            function binaryIndexOf(array, key) {
+                var lo = 0,
+                    hi = array.length - 1,
+                    mid,
+                    element;
+                while (lo <= hi) {
+                    mid = ((lo + hi) >> 1);
+                    element = array[mid];
+                    if (element < key) {
+                        lo = mid + 1;
+                    } else if (element > key) {
+                        hi = mid - 1;
+                    } else {
+                        return mid;
+                    }
+                }
+                return -1;
+            }
+
             // A - B
             function compare(paths2, totals2, paths1, totals1) {
                 // A - B
@@ -111,7 +130,7 @@ angular
                 var i = 0;
                 var k = 0;
                 while (i < n) {
-                    if (totals2[i] <= 0){
+                    if (totals2[i] <= 0) {
                         totals2.splice(i, 1);
                         paths2.splice(i, 1);
                         i--;
@@ -123,13 +142,13 @@ angular
                 var n1 = paths1.length;
                 for (var indexA = 0; indexA < n1; indexA++) {
                     var a = totals1[indexA];
-                    if (a <= 0){
+                    if (a <= 0) {
                         totals1[indexA] = -1;
                         indexA++;
                         continue;
                     }
                     var item = paths1[indexA];
-                    var indexB = paths2.indexOf(item);
+                    var indexB = binaryIndexOf(paths2, item);
                     if (indexB >= 0) {
                         var b = totals2[indexB];
                         var diff = a - b;
